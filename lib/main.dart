@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 void main() {
   runApp(const MyApp());
@@ -30,9 +32,13 @@ class _FormularioPageState extends State<FormularioPage> {
   // Controladores para los campos de texto
   final TextEditingController _nombreController = TextEditingController();
   final TextEditingController _apellidoController = TextEditingController();
-
+  
   // Variable para mostrar el resultado
   String _nombreCompleto = '';
+  
+  // Variables para la imagen
+  File? _imagenSeleccionada;
+  final ImagePicker _imagePicker = ImagePicker();
 
   // Función para concatenar nombre y apellido
   void _concatenarNombres() {
@@ -58,7 +64,59 @@ class _FormularioPageState extends State<FormularioPage> {
       _nombreController.clear();
       _apellidoController.clear();
       _nombreCompleto = '';
+      _imagenSeleccionada = null;
     });
+  }
+
+  // Seleccionar imagen desde galería
+  Future<void> _seleccionarImagenGaleria() async {
+    final XFile? imagen = await _imagePicker.pickImage(source: ImageSource.gallery);
+    if (imagen != null) {
+      setState(() {
+        _imagenSeleccionada = File(imagen.path);
+      });
+    }
+  }
+
+  // Seleccionar imagen desde cámara
+  Future<void> _seleccionarImagenCamara() async {
+    final XFile? imagen = await _imagePicker.pickImage(source: ImageSource.camera);
+    if (imagen != null) {
+      setState(() {
+        _imagenSeleccionada = File(imagen.path);
+      });
+    }
+  }
+
+  // Mostrar opciones para seleccionar imagen
+  void _mostrarOpcionesImagen() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Wrap(
+            children: <Widget>[
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Galería'),
+                onTap: () {
+                  _seleccionarImagenGaleria();
+                  Navigator.of(context).pop();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('Cámara'),
+                onTap: () {
+                  _seleccionarImagenCamara();
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -78,9 +136,45 @@ class _FormularioPageState extends State<FormularioPage> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              // Sección de imagen
+              GestureDetector(
+                onTap: _mostrarOpcionesImagen,
+                child: Container(
+                  width: 150,
+                  height: 150,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(75),
+                    border: Border.all(color: Colors.grey[400]!, width: 2),
+                  ),
+                  child: _imagenSeleccionada != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(75),
+                          child: Image.file(
+                            _imagenSeleccionada!,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.add_a_photo,
+                          size: 50,
+                          color: Colors.grey,
+                        ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Toca para agregar una foto',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 30),
             // Campo de texto para el nombre
             TextField(
               controller: _nombreController,
@@ -172,6 +266,7 @@ class _FormularioPageState extends State<FormularioPage> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );
